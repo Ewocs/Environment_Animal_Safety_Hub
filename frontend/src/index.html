@@ -301,40 +301,6 @@
     </div>
   </section>
 
-  <!-- Stats Section -->
-  <section class="stats-section">
-    <div class="stats-container">
-      <div class="stat-item" data-aos="zoom-in" data-aos-delay="0">
-        <div class="stat-icon">
-          <i class="fa-solid fa-paw"></i>
-        </div>
-        <div class="stat-number" data-count="10500">0</div>
-        <div class="stat-label">Animals Rescued</div>
-      </div>
-      <div class="stat-item" data-aos="zoom-in" data-aos-delay="100">
-        <div class="stat-icon">
-          <i class="fa-solid fa-tree"></i>
-        </div>
-        <div class="stat-number" data-count="50000">0</div>
-        <div class="stat-label">Trees Planted</div>
-      </div>
-      <div class="stat-item" data-aos="zoom-in" data-aos-delay="200">
-        <div class="stat-icon">
-          <i class="fa-solid fa-users"></i>
-        </div>
-        <div class="stat-number" data-count="25000">0</div>
-        <div class="stat-label">Active Volunteers</div>
-      </div>
-      <div class="stat-item" data-aos="zoom-in" data-aos-delay="300">
-        <div class="stat-icon">
-          <i class="fa-solid fa-city"></i>
-        </div>
-        <div class="stat-number" data-count="100">0</div>
-        <div class="stat-label">Cities Covered</div>
-      </div>
-    </div>
-  </section>
-
   <!-- About Section -->
   <section id="about" class="about-section">
     <div class="section-container">
@@ -597,56 +563,6 @@
     </div>
   </section>
 
-  <section class="eco-facts-section">
-    <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag">
-          <i class="fa-solid fa-lightbulb"></i> Did You Know?
-        </span>
-        <h2 class="section-title">Fun Eco Facts</h2>
-        <p class="section-subtitle">
-          Small facts that can create a big change 🌍
-        </p>
-      </div>
-
-      <div class="eco-fact-card" id="ecoFactCard">
-        <span class="fact-icon" id="factIcon">🌱</span>
-        <p class="eco-fact-text" id="ecoFactText"></p>
-        <span class="fact-category" id="factCategory"></span>
-      </div>
-    </div>
-  </section>
-  <!-- 🌍 Living Earth Avatar -->
-  <section class="earth-wrapper">
-    <h2>Living Earth 🌍</h2>
-    <p id="earthText">Earth is healthy and smiling 🌱</p>
-
-    <div class="earth-container">
-      <!-- Sun Rays -->
-      <div class="sun-rays"></div>
-
-      <!-- Earth -->
-      <div id="earth" class="earth happy">
-        🌍
-        <div class="cracks"></div>
-      </div>
-
-      <!-- Rain -->
-      <div class="rain"></div>
-    </div>
-
-    <!-- Demo Buttons (remove in final submission if needed) -->
-    <div class="demo-controls">
-      <button onclick="updateEarth(85)">Happy</button>
-      <button onclick="updateEarth(45)">Sad</button>
-      <button onclick="updateEarth(15)">Critical</button>
-    </div>
-
-    <!-- Sounds -->
-    <audio id="birdsSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3e3d9e5fd7.mp3"></audio>
-    <audio id="heartSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_8e9b5c07b3.mp3"></audio>
-  </section>
-
   <section class="quiz-section" id="climate-quiz">
   <h2 class="quiz-title">🌍 Climate Quiz Battle ⚔️</h2>
   <p class="quiz-subtitle">Answer fast. Build combos. Beat the AI.</p>
@@ -672,82 +588,6 @@
     <button class="next-btn" id="nextBtn">Next ➜</button>
   </div>
 </section>
-
-<section class="explore-wildlife" id="explore-wildlife">
-  <h2 class="section-title">🌿 Explore Wildlife Conservation</h2>
-  <p class="section-subtitle">
-    Learn how zoos, sanctuaries, and national parks protect wildlife and maintain Earth’s balance.
-  </p>
-
-  <!-- Filters -->
-  <div class="wildlife-filters">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="zoo">Zoos</button>
-    <button class="filter-btn" data-filter="sanctuary">Sanctuaries</button>
-    <button class="filter-btn" data-filter="park">National Parks</button>
-  </div>
-
-  <!-- Cards -->
-  <div class="wildlife-grid">
-    <!-- Zoo -->
-    <div class="wildlife-card zoo">
-      <img src="https://images.unsplash.com/photo-1546182990-dffeafbe841d">
-      <h3>Modern Zoos</h3>
-      <p class="short-text">
-        Ethical centers focused on conservation and education.
-      </p>
-
-      <div class="extra-info">
-        <ul>
-          <li>🧬 Breeding endangered species</li>
-          <li>📚 Wildlife education programs</li>
-          <li>🩺 Veterinary care & rescue</li>
-        </ul>
-      </div>
-
-      <button class="learn-btn">Learn More</button>
-    </div>
-
-    <!-- Sanctuary -->
-    <div class="wildlife-card sanctuary">
-      <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee">
-      <h3>Wildlife Sanctuaries</h3>
-      <p class="short-text">
-        Safe havens where animals live freely in nature.
-      </p>
-
-      <div class="extra-info">
-        <ul>
-          <li>🐾 Rescues injured animals</li>
-          <li>🌿 Natural, open habitats</li>
-          <li>🚫 No entertainment or cages</li>
-        </ul>
-      </div>
-
-      <button class="learn-btn">Learn More</button>
-    </div>
-
-    <!-- National Park -->
-    <div class="wildlife-card park">
-      <img src="https://images.unsplash.com/photo-1508672019048-805c876b67e2">
-      <h3>National Parks</h3>
-      <p class="short-text">
-        Protected ecosystems preserving biodiversity.
-      </p>
-
-      <div class="extra-info">
-        <ul>
-          <li>🌲 Forest & river conservation</li>
-          <li>🐘 Wildlife corridors</li>
-          <li>🛡️ Anti-poaching patrols</li>
-        </ul>
-      </div>
-
-      <button class="learn-btn">Learn More</button>
-    </div>
-  </div>
-</section>
-
 
   <!-- Environment Section -->
   <section id="environment" class="cards-section alt-bg">
@@ -881,22 +721,6 @@
     </div>
   </section>
 
-  <!-- EcoLife Dictionary Section -->
-<section id="ecoDictionary" style="padding:4rem 1rem; background: linear-gradient(135deg,#f1f8e9,#e8f5e9);">
-  <div style="max-width:1200px; margin:0 auto; text-align:center;">
-    <h2 style="font-size:2.5rem; color:#1b5e20; margin-bottom:0.5rem; font-weight:700;">🌿 EcoLife Dictionary</h2>
-    <p style="color:#555; max-width:700px; margin:0 auto 2rem;">
-      Learn important environmental and wildlife terms in a fun and interactive way. Search or browse to explore!
-    </p>
-
-    <div class="search-container" style="max-width:500px; margin:2rem auto; position:relative;">
-      <input type="text" id="searchInput" placeholder="Search for terms..." style="width:100%; padding:12px 40px 12px 15px; border-radius:25px; border:2px solid #2e7d32; font-size:1rem; outline:none;"/>
-      <span class="search-icon" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); font-size:1.2rem; color:#2e7d32;">🔍</span>
-    </div>
-
-    <div class="dictionary-grid" id="dictionaryGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px; padding:0 20px;"></div>
-    <div class="no-results" id="noResults" style="text-align:center; font-size:1.2rem; color:#555; margin:30px 0; display:none;">No terms found.</div>
-  </div></section>
   <section id="carbon" class="carbon-section">
     <div class="section-container">
       <div class="section-header">
@@ -1251,101 +1075,6 @@
       </div>
     </div>
   </section>
-  <section class="simulator-section">
-    <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag"><i class="fa-solid fa-flask"></i> What Happens If…?</span>
-        <h2 class="section-title">Explore Environmental Impact</h2>
-        <p class="section-subtitle">See what happens if we change our habits 🌍</p>
-      </div>
-
-      <!-- Selection -->
-      <div class="simulator-controls">
-        <button class="sim-btn" data-impact="plastic">If Plastic Use Increases</button>
-        <button class="sim-btn" data-impact="trees">If Trees Are Cut</button>
-      </div>
-    </div>
-    </div>
-  </section>
-
-  <section class="timeline-section">
-    <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag">
-          <i class="fa-solid fa-clock"></i> Eco Timeline
-        </span>
-        <h2 class="section-title">Journey of Our Planet</h2>
-        <p class="section-subtitle">
-          Scroll to see how small actions shape big changes 🌱
-        </p>
-      </div>
-
-      <!-- Plastic Journey -->
-      <h3 class="timeline-heading">🧴 Journey of Plastic</h3>
-      <div class="timeline">
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Production</h4>
-            <p>Plastic is manufactured from fossil fuels.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Usage</h4>
-            <p>Used for packaging, bags, and containers.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Disposal</h4>
-            <p>Most plastic is thrown away after single use.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Environmental Impact</h4>
-            <p>Pollutes land and oceans, harming wildlife.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Climate Timeline -->
-      <h3 class="timeline-heading">🌡️ Climate Change Milestones</h3>
-      <div class="timeline">
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Pre-Industrial Era</h4>
-            <p>Stable climate with low carbon emissions.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Industrial Revolution</h4>
-            <p>Rise in fossil fuel usage and emissions.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="timeline-content">
-            <h4>Global Warming</h4>
-            <p>Increase in global temperatures worldwide.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-  </section>
 
   <section class="survival-score">
     <h2>Survival Score 🫁</h2>
@@ -1557,27 +1286,6 @@
     </div>
   </section>
 
-  <section class="glossary-section">
-    <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag">
-          <i class="fa-solid fa-book"></i> Green Glossary
-        </span>
-        <h2 class="section-title">Environmental Terms Made Easy</h2>
-        <p class="section-subtitle">
-          Learn eco terms in simple words 🌱
-        </p>
-      </div>
-
-      <!-- Search -->
-      <input type="text" id="glossarySearch" placeholder="Search by letter or term..." class="glossary-search" />
-
-      <!-- Glossary List -->
-      <div class="glossary-list" id="glossaryList"></div>
-    </div>
-  </section>
-
-
   <!-- Testimonials Section -->
   <section class="testimonials-section">
     <div class="section-container">
@@ -1783,37 +1491,6 @@
       </div>
     </div>
   </section>
-
-  <!-- Newsletter Section -->
-  <section class="newsletter-section">
-    <div class="newsletter-container" data-aos="zoom-in">
-      <div class="newsletter-content">
-        <div class="newsletter-icon">
-          <i class="fa-solid fa-envelope-open-text"></i>
-        </div>
-        <h2>Stay Updated!</h2>
-        <p>
-          Subscribe to our newsletter for eco tips, event updates, and ways to
-          make a difference.
-        </p>
-
-        <form class="newsletter-form" id="newsletterForm">
-          <div class="newsletter-input-group">
-            <input type="email" placeholder="Enter your email address" required />
-            <button type="submit" class="btn btn-primary">
-              Subscribe <i class="fa-solid fa-arrow-right"></i>
-            </button>
-          </div>
-        </form>
-
-        <p class="newsletter-note">
-          <i class="fa-solid fa-lock"></i> We respect your privacy.
-          Unsubscribe anytime.
-        </p>
-      </div>
-    </div>
-  </section>
-
 
   <section id="team-cta" class="team-cta-section">
     <div class="cta-overlay"></div>
