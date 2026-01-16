@@ -1,471 +1,583 @@
-// Community Forums and Discussion Boards
-// Issue #741
-
+/**
+ * EcoForums - Community Forums Management
+ * Handles forum categories, threads, replies, search, and moderation
+ */
 class EcoForums {
-  constructor() {
-    this.forumData = null;
-    this.currentUser = {
-      username: "EcoUser", // In real app, this would come from authentication
-      role: "user",
-      avatar: "https://picsum.photos/seed/avatar1/100"
-    };
+    constructor() {
+        this.currentUser = this.getCurrentUser();
+        this.forumData = null;
+        this.currentCategory = null;
+        this.currentThread = null;
+        this.searchQuery = '';
+        this.currentFilter = 'all';
+        this.threadsPerPage = 10;
+        this.currentPage = 1;
 
-    this.init();
-  }
-
-  async init() {
-    await this.loadForumData();
-    this.setupEventListeners();
-    this.renderCategories();
-    this.renderRecentThreads();
-    this.setupThemeToggle();
-  }
-
-  async loadForumData() {
-    try {
-      const response = await fetch('../../assets/data/forums.json');
-      this.forumData = await response.json();
-    } catch (error) {
-      console.error('Error loading forum data:', error);
-      // Fallback to empty data structure
-      this.forumData = { categories: [], threads: [] };
-    }
-  }
-
-  setupEventListeners() {
-    // Create thread button
-    const createBtn = document.getElementById('createThreadBtn');
-    if (createBtn) {
-      createBtn.addEventListener('click', () => this.openCreateThreadModal());
+        this.init();
     }
 
-    // Search functionality
-    const searchInput = document.getElementById('forumSearch');
-    const searchBtn = document.getElementById('searchBtn');
-
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
-    }
-    if (searchBtn) {
-      searchBtn.addEventListener('click', () => this.handleSearch(searchInput.value));
+    init() {
+        this.loadForumData();
+        this.setupEventListeners();
+        this.renderCategories();
+        this.renderRecentThreads();
+        this.updateStats();
     }
 
-    // Modal close buttons
-    document.querySelectorAll('.modal-close').forEach(btn => {
-      btn.addEventListener('click', () => this.closeModals());
-    });
-
-    // Create thread form
-    const createForm = document.getElementById('createThreadForm');
-    if (createForm) {
-      createForm.addEventListener('submit', (e) => this.handleCreateThread(e));
+    getCurrentUser() {
+        // Get user from localStorage or session
+        const user = JSON.parse(localStorage.getItem('ecolife_user') || 'null');
+        return user || { id: 'guest', name: 'Guest', role: 'user' };
     }
 
-    // Reply functionality
-    const replyBtn = document.getElementById('submitReplyBtn');
-    if (replyBtn) {
-      replyBtn.addEventListener('click', () => this.handleAddReply());
+    async loadForumData() {
+        try {
+            const response = await fetch('../../assets/data/forums.json');
+            if (!response.ok) {
+                // Create default forum data if file doesn't exist
+                this.forumData = this.getDefaultForumData();
+                this.saveForumData();
+            } else {
+                this.forumData = await response.json();
+            }
+        } catch (error) {
+            console.error('Error loading forum data:', error);
+            this.forumData = this.getDefaultForumData();
+        }
     }
 
-    // Moderation buttons
-    this.setupModerationListeners();
-  }
+    getDefaultForumData() {
+        return {
+            categories: [
+                {
+                    id: 'animal-safety',
+                    name: 'Animal Safety',
+                    description: 'Discussions about animal welfare, safety tips, and care guidelines',
+                    icon: 'fas fa-shield-alt',
+                    color: '#e74c3c',
+                    threads: 0,
+                    posts: 0
+                },
+                {
+                    id: 'environment',
+                    name: 'Environment',
+                    description: 'Environmental conservation, climate change, and sustainability topics',
+                    icon: 'fas fa-leaf',
+                    color: '#27ae60',
+                    threads: 0,
+                    posts: 0
+                },
+                {
+                    id: 'eco-living',
+                    name: 'Eco-Friendly Living',
+                    description: 'Sustainable living tips, green products, and lifestyle changes',
+                    icon: 'fas fa-recycle',
+                    color: '#3498db',
+                    threads: 0,
+                    posts: 0
+                },
+                {
+                    id: 'conservation',
+                    name: 'Conservation',
+                    description: 'Wildlife conservation, habitat protection, and biodiversity',
+                    icon: 'fas fa-tree',
+                    color: '#9b59b6',
+                    threads: 0,
+                    posts: 0
+                }
+            ],
+            threads: [],
+            users: {}
+        };
+    }
 
-  setupModerationListeners() {
-    const pinBtn = document.getElementById('pinThreadBtn');
-    const lockBtn = document.getElementById('lockThreadBtn');
-    const deleteBtn = document.getElementById('deleteThreadBtn');
+    async saveForumData() {
+        try {
+            // In a real app, this would be an API call
+            localStorage.setItem('ecolife_forum_data', JSON.stringify(this.forumData));
+        } catch (error) {
+            console.error('Error saving forum data:', error);
+        }
+    }
 
-    if (pinBtn) pinBtn.addEventListener('click', () => this.togglePinThread());
-    if (lockBtn) lockBtn.addEventListener('click', () => this.toggleLockThread());
-    if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteThread());
-  }
+    setupEventListeners() {
+        // Search functionality
+        const searchInput = document.getElementById('forum-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.toLowerCase();
+                this.renderRecentThreads();
+            });
+        }
 
-  renderCategories() {
-    const container = document.getElementById('forumCategories');
-    if (!container || !this.forumData) return;
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderRecentThreads();
+            });
+        });
 
-    container.innerHTML = this.forumData.categories.map(category => `
-      <div class="forum-category" data-category="${category.id}" onclick="ecoForums.showCategory('${category.id}')">
-        <div class="category-icon" style="background: ${category.color}">
-          ${category.icon}
-        </div>
-        <div class="category-info">
-          <h3 class="category-title">${category.name}</h3>
-          <p class="category-description">${category.description}</p>
-          <div class="category-stats">
-            <span>${category.threads.length} threads</span>
-          </div>
-        </div>
-        <div class="category-arrow">
-          <i class="fas fa-chevron-right"></i>
-        </div>
-      </div>
-    `).join('');
-  }
+        // Create thread button
+        const createBtn = document.getElementById('create-thread-btn');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => this.openCreateThreadModal());
+        }
 
-  renderRecentThreads() {
-    const container = document.getElementById('recentThreads');
-    if (!container || !this.forumData) return;
+        // Modal events
+        this.setupModalEvents();
+    }
 
-    const recentThreads = this.forumData.threads
-      .sort((a, b) => new Date(b.lastReply) - new Date(a.lastReply))
-      .slice(0, 10);
+    setupModalEvents() {
+        // Create thread modal
+        const createModal = document.getElementById('create-thread-modal');
+        const closeCreateModal = document.getElementById('close-create-modal');
+        const cancelCreate = document.getElementById('cancel-create-thread');
+        const submitCreate = document.getElementById('submit-create-thread');
 
-    container.innerHTML = recentThreads.map(thread => `
-      <div class="thread-item ${thread.pinned ? 'pinned' : ''}" onclick="ecoForums.openThread('${thread.id}')">
-        ${thread.pinned ? '<div class="pin-indicator"><i class="fas fa-thumbtack"></i></div>' : ''}
-        <div class="thread-avatar">
-          <img src="${thread.authorAvatar}" alt="${thread.author}">
-        </div>
-        <div class="thread-content">
-          <h4 class="thread-title">${thread.title}</h4>
-          <div class="thread-meta">
-            <span class="thread-author">by ${thread.author}</span>
-            <span class="thread-category">${this.getCategoryName(thread.category)}</span>
-            <span class="thread-stats">
-              <i class="fas fa-reply"></i> ${thread.replies}
-              <i class="fas fa-eye"></i> ${thread.views}
-            </span>
-          </div>
-        </div>
-        <div class="thread-date">
-          ${this.formatDate(thread.lastReply)}
-        </div>
-      </div>
-    `).join('');
-  }
+        if (closeCreateModal) {
+            closeCreateModal.addEventListener('click', () => this.closeModal(createModal));
+        }
+        if (cancelCreate) {
+            cancelCreate.addEventListener('click', () => this.closeModal(createModal));
+        }
+        if (submitCreate) {
+            submitCreate.addEventListener('click', () => this.createThread());
+        }
 
-  showCategory(categoryId) {
-    const category = this.forumData.categories.find(cat => cat.id === categoryId);
-    if (!category) return;
+        // Thread modal
+        const threadModal = document.getElementById('thread-modal');
+        const closeThreadModal = document.getElementById('close-thread-modal');
 
-    const categoryThreads = this.forumData.threads.filter(thread => thread.category === categoryId);
+        if (closeThreadModal) {
+            closeThreadModal.addEventListener('click', () => this.closeModal(threadModal));
+        }
 
-    // For now, just show threads in that category
-    const container = document.getElementById('recentThreads');
-    container.innerHTML = `
-      <div class="category-header">
-        <button onclick="ecoForums.renderRecentThreads()" class="back-btn">
-          <i class="fas fa-arrow-left"></i> Back to All Discussions
-        </button>
-        <h3>${category.icon} ${category.name}</h3>
-        <p>${category.description}</p>
-      </div>
-      ${categoryThreads.map(thread => `
-        <div class="thread-item ${thread.pinned ? 'pinned' : ''}" onclick="ecoForums.openThread('${thread.id}')">
-          ${thread.pinned ? '<div class="pin-indicator"><i class="fas fa-thumbtack"></i></div>' : ''}
-          <div class="thread-avatar">
-            <img src="${thread.authorAvatar}" alt="${thread.author}">
-          </div>
-          <div class="thread-content">
-            <h4 class="thread-title">${thread.title}</h4>
-            <div class="thread-meta">
-              <span class="thread-author">by ${thread.author}</span>
-              <span class="thread-stats">
-                <i class="fas fa-reply"></i> ${thread.replies}
-                <i class="fas fa-eye"></i> ${thread.views}
-              </span>
+        // Thread actions
+        const likeBtn = document.getElementById('like-thread-btn');
+        const shareBtn = document.getElementById('share-thread-btn');
+        const pinBtn = document.getElementById('pin-thread-btn');
+        const deleteBtn = document.getElementById('delete-thread-btn');
+        const submitReply = document.getElementById('submit-reply');
+
+        if (likeBtn) likeBtn.addEventListener('click', () => this.likeThread());
+        if (shareBtn) shareBtn.addEventListener('click', () => this.shareThread());
+        if (pinBtn) pinBtn.addEventListener('click', () => this.pinThread());
+        if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteThread());
+        if (submitReply) submitReply.addEventListener('click', () => this.submitReply());
+
+        // Close modals when clicking outside
+        [createModal, threadModal].forEach(modal => {
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        this.closeModal(modal);
+                    }
+                });
+            }
+        });
+    }
+
+    renderCategories() {
+        const container = document.getElementById('categories-container');
+        if (!container || !this.forumData) return;
+
+        container.innerHTML = this.forumData.categories.map(category => `
+            <div class="category-card" data-category="${category.id}" onclick="ecoForums.openCategory('${category.id}')">
+                <div class="category-icon" style="background-color: ${category.color}">
+                    <i class="${category.icon}"></i>
+                </div>
+                <div class="category-info">
+                    <h3 class="category-title">${category.name}</h3>
+                    <p class="category-description">${category.description}</p>
+                    <div class="category-stats">
+                        <span class="stat">${category.threads} threads</span>
+                        <span class="stat">${category.posts} posts</span>
+                    </div>
+                </div>
+                <div class="category-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
             </div>
-          </div>
-          <div class="thread-date">
-            ${this.formatDate(thread.lastReply)}
-          </div>
-        </div>
-      `).join('')}
-    `;
-  }
-
-  openCreateThreadModal() {
-    const modal = document.getElementById('createThreadModal');
-    const categorySelect = document.getElementById('threadCategory');
-
-    // Populate categories
-    categorySelect.innerHTML = '<option value="">Select a category</option>' +
-      this.forumData.categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
-
-    modal.style.display = 'block';
-  }
-
-  handleCreateThread(e) {
-    e.preventDefault();
-
-    const title = document.getElementById('threadTitle').value.trim();
-    const category = document.getElementById('threadCategory').value;
-    const content = document.getElementById('threadContent').value.trim();
-
-    if (!title || !category || !content) {
-      alert('Please fill in all fields');
-      return;
+        `).join('');
     }
 
-    const newThread = {
-      id: `thread_${Date.now()}`,
-      title,
-      content,
-      author: this.currentUser.username,
-      authorAvatar: this.currentUser.avatar,
-      category,
-      createdAt: new Date().toISOString(),
-      lastReply: new Date().toISOString(),
-      replies: 0,
-      views: 0,
-      likes: 0,
-      pinned: false,
-      locked: false,
-      repliesList: []
-    };
+    renderRecentThreads() {
+        const container = document.getElementById('threads-container');
+        if (!container || !this.forumData) return;
 
-    this.forumData.threads.unshift(newThread);
-    this.renderRecentThreads();
-    this.closeModals();
+        let threads = [...this.forumData.threads];
 
-    // Reset form
-    e.target.reset();
+        // Apply search filter
+        if (this.searchQuery) {
+            threads = threads.filter(thread =>
+                thread.title.toLowerCase().includes(this.searchQuery) ||
+                thread.content.toLowerCase().includes(this.searchQuery) ||
+                thread.author.name.toLowerCase().includes(this.searchQuery)
+            );
+        }
 
-    // Show success message
-    this.showNotification('Discussion created successfully!', 'success');
-  }
+        // Apply category filter
+        if (this.currentCategory) {
+            threads = threads.filter(thread => thread.category === this.currentCategory);
+        }
 
-  openThread(threadId) {
-    const thread = this.forumData.threads.find(t => t.id === threadId);
-    if (!thread) return;
+        // Apply time/popularity filters
+        const now = new Date();
+        threads = threads.filter(thread => {
+            const threadDate = new Date(thread.createdAt);
+            switch (this.currentFilter) {
+                case 'recent':
+                    return (now - threadDate) < (7 * 24 * 60 * 60 * 1000); // Last 7 days
+                case 'popular':
+                    return thread.likes > 5 || thread.replies.length > 10;
+                case 'unanswered':
+                    return thread.replies.length === 0;
+                default:
+                    return true;
+            }
+        });
 
-    // Update view count
-    thread.views++;
+        // Sort threads
+        threads.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
-    const modal = document.getElementById('threadModal');
-    document.getElementById('threadTitleDisplay').textContent = thread.title;
-    document.getElementById('threadAuthor').textContent = `by ${thread.author}`;
-    document.getElementById('threadDate').textContent = this.formatDate(thread.createdAt);
-    document.getElementById('threadCategoryDisplay').textContent = this.getCategoryName(thread.category);
-    document.getElementById('threadContentDisplay').innerHTML = `<p>${thread.content}</p>`;
-    document.getElementById('replyCount').textContent = thread.replies;
+        // Paginate
+        const startIndex = 0;
+        const endIndex = this.threadsPerPage;
+        const displayedThreads = threads.slice(startIndex, endIndex);
 
-    this.renderReplies(thread);
+        container.innerHTML = displayedThreads.length > 0 ?
+            displayedThreads.map(thread => this.renderThreadCard(thread)).join('') :
+            '<div class="no-threads">No threads found. Be the first to start a discussion!</div>';
 
-    // Show moderation panel if user has permissions
-    const modPanel = document.getElementById('moderationPanel');
-    if (this.hasPermission('moderate')) {
-      modPanel.style.display = 'block';
-      this.currentModeratedThread = thread;
-    } else {
-      modPanel.style.display = 'none';
+        // Show/hide load more button
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = threads.length > this.threadsPerPage ? 'block' : 'none';
+        }
     }
 
-    modal.style.display = 'block';
-  }
+    renderThreadCard(thread) {
+        const category = this.forumData.categories.find(c => c.id === thread.category);
+        const lastReply = thread.replies.length > 0 ?
+            thread.replies[thread.replies.length - 1] : null;
+        const timeAgo = this.getTimeAgo(new Date(thread.createdAt));
 
-  renderReplies(thread) {
-    const container = document.getElementById('repliesList');
-    if (!thread.repliesList || thread.repliesList.length === 0) {
-      container.innerHTML = '<p class="no-replies">No replies yet. Be the first to share your thoughts!</p>';
-      return;
-    }
-
-    container.innerHTML = thread.repliesList.map(reply => `
-      <div class="reply-item">
-        <div class="reply-avatar">
-          <img src="${reply.authorAvatar}" alt="${reply.author}">
-        </div>
-        <div class="reply-content">
-          <div class="reply-header">
-            <span class="reply-author">${reply.author}</span>
-            <span class="reply-date">${this.formatDate(reply.createdAt)}</span>
-          </div>
-          <div class="reply-text">${reply.content}</div>
-          <div class="reply-actions">
-            <button class="like-btn" onclick="ecoForums.likeReply('${reply.id}')">
-              <i class="fas fa-heart"></i> ${reply.likes || 0}
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  handleAddReply() {
-    const replyContent = document.getElementById('replyContent').value.trim();
-    if (!replyContent) {
-      alert('Please enter a reply');
-      return;
-    }
-
-    const threadTitle = document.getElementById('threadTitleDisplay').textContent;
-    const thread = this.forumData.threads.find(t => t.title === threadTitle);
-    if (!thread) return;
-
-    const newReply = {
-      id: `reply_${Date.now()}`,
-      content: replyContent,
-      author: this.currentUser.username,
-      authorAvatar: this.currentUser.avatar,
-      createdAt: new Date().toISOString(),
-      likes: 0
-    };
-
-    thread.repliesList.push(newReply);
-    thread.replies++;
-    thread.lastReply = new Date().toISOString();
-
-    this.renderReplies(thread);
-    document.getElementById('replyCount').textContent = thread.replies;
-    document.getElementById('replyContent').value = '';
-
-    this.showNotification('Reply added successfully!', 'success');
-  }
-
-  handleSearch(query) {
-    if (!query.trim()) {
-      this.renderRecentThreads();
-      return;
-    }
-
-    const filteredThreads = this.forumData.threads.filter(thread =>
-      thread.title.toLowerCase().includes(query.toLowerCase()) ||
-      thread.content.toLowerCase().includes(query.toLowerCase()) ||
-      thread.author.toLowerCase().includes(query.toLowerCase())
-    );
-
-    const container = document.getElementById('recentThreads');
-    container.innerHTML = `
-      <div class="search-results">
-        <h3>Search Results for "${query}"</h3>
-        <p>Found ${filteredThreads.length} discussions</p>
-      </div>
-      ${filteredThreads.map(thread => `
-        <div class="thread-item" onclick="ecoForums.openThread('${thread.id}')">
-          <div class="thread-avatar">
-            <img src="${thread.authorAvatar}" alt="${thread.author}">
-          </div>
-          <div class="thread-content">
-            <h4 class="thread-title">${this.highlightSearch(thread.title, query)}</h4>
-            <div class="thread-meta">
-              <span class="thread-author">by ${thread.author}</span>
-              <span class="thread-category">${this.getCategoryName(thread.category)}</span>
-              <span class="thread-stats">
-                <i class="fas fa-reply"></i> ${thread.replies}
-              </span>
+        return `
+            <div class="thread-card ${thread.pinned ? 'pinned' : ''}" onclick="ecoForums.openThread('${thread.id}')">
+                <div class="thread-header">
+                    <div class="thread-title-section">
+                        <h3 class="thread-title">${thread.title}</h3>
+                        ${thread.pinned ? '<span class="pinned-badge"><i class="fas fa-thumbtack"></i> Pinned</span>' : ''}
+                    </div>
+                    <div class="thread-meta">
+                        <span class="thread-category" style="background-color: ${category?.color || '#666'}">
+                            ${category?.name || 'General'}
+                        </span>
+                        <span class="thread-author">by ${thread.author.name}</span>
+                        <span class="thread-time">${timeAgo}</span>
+                    </div>
+                </div>
+                <div class="thread-preview">
+                    ${thread.content.substring(0, 200)}${thread.content.length > 200 ? '...' : ''}
+                </div>
+                <div class="thread-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-reply"></i>
+                        <span>${thread.replies.length} replies</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-heart"></i>
+                        <span>${thread.likes} likes</span>
+                    </div>
+                    ${lastReply ? `
+                        <div class="stat-item">
+                            <span>Last reply ${this.getTimeAgo(new Date(lastReply.createdAt))} by ${lastReply.author.name}</span>
+                        </div>
+                    ` : ''}
+                </div>
             </div>
-          </div>
-          <div class="thread-date">
-            ${this.formatDate(thread.lastReply)}
-          </div>
-        </div>
-      `).join('')}
-    `;
-  }
-
-  highlightSearch(text, query) {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
-  }
-
-  // Moderation functions
-  togglePinThread() {
-    if (!this.currentModeratedThread) return;
-    this.currentModeratedThread.pinned = !this.currentModeratedThread.pinned;
-    this.showNotification(`Thread ${this.currentModeratedThread.pinned ? 'pinned' : 'unpinned'}!`, 'info');
-  }
-
-  toggleLockThread() {
-    if (!this.currentModeratedThread) return;
-    this.currentModeratedThread.locked = !this.currentModeratedThread.locked;
-    this.showNotification(`Thread ${this.currentModeratedThread.locked ? 'locked' : 'unlocked'}!`, 'info');
-  }
-
-  deleteThread() {
-    if (!this.currentModeratedThread) return;
-    if (!confirm('Are you sure you want to delete this thread? This action cannot be undone.')) return;
-
-    const index = this.forumData.threads.findIndex(t => t.id === this.currentModeratedThread.id);
-    if (index > -1) {
-      this.forumData.threads.splice(index, 1);
-      this.closeModals();
-      this.renderRecentThreads();
-      this.showNotification('Thread deleted successfully!', 'success');
+        `;
     }
-  }
 
-  hasPermission(action) {
-    const userRole = this.forumData.users[this.currentUser.role] || this.forumData.users.user;
-    return userRole.permissions.includes(action);
-  }
+    updateStats() {
+        const totalThreads = this.forumData.threads.length;
+        const totalReplies = this.forumData.threads.reduce((sum, thread) => sum + thread.replies.length, 0);
+        const activeUsers = new Set([
+            ...this.forumData.threads.map(t => t.author.id),
+            ...this.forumData.threads.flatMap(t => t.replies.map(r => r.author.id))
+        ]).size;
 
-  // Utility functions
-  getCategoryName(categoryId) {
-    const category = this.forumData.categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Unknown';
-  }
-
-  formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString();
+        document.getElementById('total-threads').textContent = totalThreads;
+        document.getElementById('total-replies').textContent = totalReplies;
+        document.getElementById('active-users').textContent = activeUsers;
     }
-  }
 
-  closeModals() {
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.style.display = 'none';
-    });
-  }
+    openCreateThreadModal() {
+        if (!this.isLoggedIn()) {
+            alert('Please log in to create a thread.');
+            return;
+        }
 
-  showNotification(message, type = 'info') {
-    // Simple notification - in real app, use a proper notification system
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-      color: white;
-      padding: 15px 20px;
-      border-radius: 5px;
-      z-index: 1000;
-      animation: slideIn 0.3s ease;
-    `;
+        const modal = document.getElementById('create-thread-modal');
+        const categorySelect = document.getElementById('thread-category');
 
-    document.body.appendChild(notification);
+        // Populate categories
+        categorySelect.innerHTML = '<option value="">Select a category</option>' +
+            this.forumData.categories.map(cat =>
+                `<option value="${cat.id}">${cat.name}</option>`
+            ).join('');
 
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  setupThemeToggle() {
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-      themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-theme');
-        const isDark = document.body.classList.contains('dark-theme');
-        localStorage.setItem('forum-theme', isDark ? 'dark' : 'light');
-      });
-
-      // Load saved theme
-      const savedTheme = localStorage.getItem('forum-theme');
-      if (savedTheme === 'dark') {
-        document.body.classList.add('dark-theme');
-      }
+        modal.classList.add('active');
     }
-  }
+
+    createThread() {
+        const title = document.getElementById('thread-title').value.trim();
+        const category = document.getElementById('thread-category').value;
+        const content = document.getElementById('thread-content').value.trim();
+        const pinned = document.getElementById('thread-pinned').checked;
+
+        if (!title || !category || !content) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        const thread = {
+            id: Date.now().toString(),
+            title,
+            content,
+            category,
+            author: this.currentUser,
+            createdAt: new Date().toISOString(),
+            likes: 0,
+            pinned: pinned && this.isAdmin(),
+            replies: []
+        };
+
+        this.forumData.threads.unshift(thread);
+        this.updateCategoryStats(category);
+        this.saveForumData();
+        this.renderRecentThreads();
+        this.updateStats();
+
+        // Close modal and reset form
+        this.closeModal(document.getElementById('create-thread-modal'));
+        document.getElementById('create-thread-form').reset();
+
+        // Show success message
+        this.showNotification('Thread created successfully!', 'success');
+    }
+
+    openThread(threadId) {
+        const thread = this.forumData.threads.find(t => t.id === threadId);
+        if (!thread) return;
+
+        this.currentThread = thread;
+        const modal = document.getElementById('thread-modal');
+        const category = this.forumData.categories.find(c => c.id === thread.category);
+
+        // Update modal content
+        document.getElementById('thread-modal-title').textContent = thread.title;
+        document.getElementById('thread-author').textContent = `by ${thread.author.name}`;
+        document.getElementById('thread-date').textContent = this.formatDate(new Date(thread.createdAt));
+        document.getElementById('thread-category-badge').textContent = category?.name || 'General';
+        document.getElementById('thread-category-badge').style.backgroundColor = category?.color || '#666';
+        document.getElementById('thread-content').innerHTML = this.formatContent(thread.content);
+        document.getElementById('thread-likes').textContent = thread.likes;
+        document.getElementById('replies-count').textContent = thread.replies.length;
+
+        // Render replies
+        this.renderReplies(thread.replies);
+
+        // Show/hide admin buttons
+        const adminBtns = modal.querySelectorAll('.admin-only');
+        adminBtns.forEach(btn => {
+            btn.style.display = this.isAdmin() ? 'inline-block' : 'none';
+        });
+
+        modal.classList.add('active');
+    }
+
+    renderReplies(replies) {
+        const container = document.getElementById('replies-list');
+        if (!container) return;
+
+        container.innerHTML = replies.map(reply => `
+            <div class="reply-item">
+                <div class="reply-header">
+                    <span class="reply-author">${reply.author.name}</span>
+                    <span class="reply-date">${this.formatDate(new Date(reply.createdAt))}</span>
+                </div>
+                <div class="reply-content">${this.formatContent(reply.content)}</div>
+                <div class="reply-actions">
+                    <button class="reply-action-btn" onclick="ecoForums.likeReply('${reply.id}')">
+                        <i class="fas fa-heart"></i> Like
+                    </button>
+                    ${this.isAdmin() ? `
+                        <button class="reply-action-btn delete" onclick="ecoForums.deleteReply('${reply.id}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    submitReply() {
+        if (!this.isLoggedIn()) {
+            alert('Please log in to reply.');
+            return;
+        }
+
+        const content = document.getElementById('reply-content').value.trim();
+        if (!content) {
+            alert('Please enter a reply.');
+            return;
+        }
+
+        const reply = {
+            id: Date.now().toString(),
+            content,
+            author: this.currentUser,
+            createdAt: new Date().toISOString(),
+            likes: 0
+        };
+
+        this.currentThread.replies.push(reply);
+        this.updateCategoryStats(this.currentThread.category);
+        this.saveForumData();
+        this.renderReplies(this.currentThread.replies);
+        this.updateStats();
+
+        // Reset form
+        document.getElementById('reply-content').value = '';
+        document.getElementById('replies-count').textContent = this.currentThread.replies.length;
+
+        this.showNotification('Reply posted successfully!', 'success');
+    }
+
+    likeThread() {
+        if (!this.isLoggedIn()) {
+            alert('Please log in to like threads.');
+            return;
+        }
+
+        this.currentThread.likes++;
+        document.getElementById('thread-likes').textContent = this.currentThread.likes;
+        this.saveForumData();
+        this.showNotification('Thread liked!', 'success');
+    }
+
+    shareThread() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            this.showNotification('Thread link copied to clipboard!', 'success');
+        });
+    }
+
+    pinThread() {
+        if (!this.isAdmin()) return;
+
+        this.currentThread.pinned = !this.currentThread.pinned;
+        this.saveForumData();
+        this.renderRecentThreads();
+        this.showNotification(`Thread ${this.currentThread.pinned ? 'pinned' : 'unpinned'}!`, 'success');
+    }
+
+    deleteThread() {
+        if (!this.isAdmin()) return;
+
+        if (confirm('Are you sure you want to delete this thread?')) {
+            this.forumData.threads = this.forumData.threads.filter(t => t.id !== this.currentThread.id);
+            this.updateCategoryStats(this.currentThread.category, -1);
+            this.saveForumData();
+            this.renderRecentThreads();
+            this.updateStats();
+            this.closeModal(document.getElementById('thread-modal'));
+            this.showNotification('Thread deleted!', 'success');
+        }
+    }
+
+    updateCategoryStats(categoryId, threadDelta = 1) {
+        const category = this.forumData.categories.find(c => c.id === categoryId);
+        if (category) {
+            category.threads += threadDelta;
+            // Update posts count (threads + replies)
+            category.posts = this.forumData.threads
+                .filter(t => t.category === categoryId)
+                .reduce((sum, t) => sum + 1 + t.replies.length, 0);
+        }
+    }
+
+    openCategory(categoryId) {
+        this.currentCategory = categoryId;
+        this.renderRecentThreads();
+        // Scroll to threads section
+        document.querySelector('.threads-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    getTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+
+        return date.toLocaleDateString();
+    }
+
+    formatDate(date) {
+        return date.toLocaleString();
+    }
+
+    formatContent(content) {
+        // Basic markdown-like formatting
+        return content
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    }
+
+    isLoggedIn() {
+        return this.currentUser.id !== 'guest';
+    }
+
+    isAdmin() {
+        return this.currentUser.role === 'admin';
+    }
+
+    closeModal(modal) {
+        modal.classList.remove('active');
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
 }
 
 // Initialize forums when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  window.ecoForums = new EcoForums();
+    window.ecoForums = new EcoForums();
 });
